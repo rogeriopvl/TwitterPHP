@@ -1,7 +1,7 @@
 <?php
 /**
  * TODOs:
- * - check for curl or api errors and give some output
+ * - check for api errors and give some output
  *
  */
 
@@ -9,7 +9,11 @@
 *   TwitterPHP is a PHP library to interact with the Twitter API
 *
 *   @author Rogerio Vicente <http://rogeriopvl.com>
-*   @version 0.1
+*   @version 0.2
+*
+*	Changelog:
+*	v0.2 - Added a check to see if cURL is loaded, and some http error
+* 	code detection on the connect() method.
 *
 *   ************************* LICENSE ************************************
 *
@@ -34,7 +38,19 @@ require_once ('defines.inc.php');
 class TwitterPHP
 {   
     /**
-     * Connects to the API and returns an simpleXML object with content
+     * Constructor
+     * @throws Exception if curl is not loaded
+     */
+	function __construct ()
+    {
+    	if (!extension_loaded ('curl'))
+    	{
+    		throw new Exception ('Error: cURL not loaded. TwitterPHP needs cURL to work correctly.');
+    	}
+    }
+    
+    /**
+     * Connects to the API and returns an simpleXML object with content.
      * 
      * @param string $host the host to connect to. It should be a twitter api url
      * @param string $conntype GET or POST (read twitter api for details)
@@ -67,7 +83,10 @@ class TwitterPHP
         
         curl_close ($sess); //turn off the water while you're brushing your teeth :P
         
-        return simplexml_load_string($result);
+        if ($resHeaders['http_code'] == 200)
+	        return simplexml_load_string($result);
+	    else
+	    	return False;
     }
     
     /**

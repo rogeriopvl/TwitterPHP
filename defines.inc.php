@@ -3,7 +3,7 @@
 	*   TwitterPHP is a PHP library to interact with the Twitter API
 	*
 	*   @author Rogerio Vicente <http://rogeriopvl.com>
-	*   @version 0.1
+	*   @version 0.2
 	*
 	*   ************************* LICENSE ************************************
 	*
@@ -22,7 +22,7 @@
 	*   You should have received a copy of the GNU General Public License
 	*   along with TwitterPHP.  If not, see <http://www.gnu.org/licenses/>.
 	*************************************************************************/
-	define ("VERSION", "v0.1");
+	define ("VERSION", "v0.2");
 	define ("REFERER", "TwitterPHP v0.1");
         
     define ("GET", "get");
