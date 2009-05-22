@@ -2,16 +2,18 @@
 /**
  * TODOs:
  * - check for api errors and give some output
- *
+ * - Add OAuth support
  */
 
 /*************************************************************************
 *   TwitterPHP is a PHP library to interact with the Twitter API
 *
 *   @author Rogerio Vicente <http://rogeriopvl.com>
-*   @version 0.2
+*   @version 0.5
 *
 *	Changelog:
+*	v0.5 - Some code optimizations, methods now return XML string instead
+*	       of a simpleXML object. Removed config.inc.php.
 *	v0.2 - Added a check to see if cURL is loaded, and some http error
 * 	code detection on the connect() method.
 *
@@ -37,16 +39,22 @@ require_once ('defines.inc.php');
 
 class TwitterPHP
 {   
-    /**
+    private $username;
+	private $password;
+	
+	/**
      * Constructor
      * @throws Exception if curl is not loaded
      */
-	function __construct ()
+	function __construct ($username, $password)
     {
     	if (!extension_loaded ('curl'))
     	{
     		throw new Exception ('Error: cURL not loaded. TwitterPHP needs cURL to work correctly.');
     	}
+
+		$this->username = $username;
+		$this->password = $password;
     }
     
     /**
@@ -54,7 +62,9 @@ class TwitterPHP
      * 
      * @param string $host the host to connect to. It should be a twitter api url
      * @param string $conntype GET or POST (read twitter api for details)
-     * @return mixed simpleXML object on success, FALSE otherwise
+	 * @param boolean $auth true if authentication is needed, false otherwise
+     * @return string XML string with auth info
+	 * @throws Exception on curl error and http error
      */
     private function connect ($host, $conntype, $auth)
     {   
@@ -68,7 +78,7 @@ class TwitterPHP
         //check if authentication is needed
         if ($auth == True) {
 			require_once ('config.inc.php'); // to get user login and pass	
-            curl_setopt($sess, CURLOPT_USERPWD, "$twitterusername:$twitterpassword");
+            curl_setopt($sess, CURLOPT_USERPWD, "$username:$password");
 		}
         
         //check if its POST, otherwise its GET
@@ -81,17 +91,20 @@ class TwitterPHP
         $result = curl_exec($sess);
         $resHeaders = curl_getinfo($sess);
         
-        curl_close ($sess); //turn off the water while you're brushing your teeth :P
+		if (curl_error($sess) != '')
+			throw new Exception ('CURL Error: '.curl_error($sess));
         
-        if ($resHeaders['http_code'] == 200)
-	        return simplexml_load_string($result);
+		curl_close ($sess); //turn off the water while you're brushing your teeth :P
+        
+        if ($resHeaders['http_code'] != 200)
+	        throw new Exception ('Server returned HTTP error code '.$resHeaders['http_code']);
 	    else
-	    	return False;
+	    	return $result;
     }
     
     /**
      * Get the 20 most recent posts in public timeline. Twitter caches this for 60secs.
-     * @return object the public timeline in a simpleXML object
+     * @return string the public timeline in XML
      */
     public function getPublicTimeLine ()
     {   
@@ -103,7 +116,7 @@ class TwitterPHP
      * Get the updates of a given user. Only works for non blocked updates.
      * @param string $userid the id of the target user
      * @param integer $count the number of update to return. Maximum is 200.
-     * @return object a simpleXML object containing the user updates
+     * @return string XML containing the user updates
      */
     public function getUserUpdates ($userid, $count)
     {
@@ -116,7 +129,7 @@ class TwitterPHP
     
     /**
      * Get the 20 most recent direct messages of authenticated user
-     * @return object a simpleXML object containing 20 direct messages
+     * @return string XML containing 20 direct messages
      */
     public function getDirectMsgs ()
     {
@@ -127,7 +140,7 @@ class TwitterPHP
     /**
      * Gets the timeline of the authenticated user
 	 * @param integer $count the number of posts to display
-     * @return object a simpleXML object containing the posts from user and friends
+     * @return string XML containing the posts from user and friends
      */
     public function getOwnTimeline ($count)
     {
@@ -141,7 +154,7 @@ class TwitterPHP
     /**
      * Get the 20 most recent replies for authenticated user
      * @param date $since optional select only replies after this date
-     * @return object a simpleXML object containing 20 most recent replies
+     * @return string XML containing 20 most recent replies
      */
     public function getReplies ($since = false)
     {
@@ -152,7 +165,7 @@ class TwitterPHP
 	/**
 	 * Posts a new status update to twitter.
 	 * @param string $message the message to post. Should not be more than 140 chars.
-	 * @return abject simpleXML object with status element on success, false otherwise
+	 * @return string XML with status element on success, false otherwise
 	 */
     public function sendUpdate ($message)
     {
@@ -164,7 +177,7 @@ class TwitterPHP
 	 * Posts a reply to a given userid.
 	 * @param string $message the text content of the reply
 	 * @param string $userid the user to whom the reply is
-	 * @return object a simpleXML object with status element on success, false otherwise
+	 * @return string XML with status element on success, false otherwise
 	 */
     public function sendReply ($message, $userid)
     {
@@ -176,6 +189,7 @@ class TwitterPHP
 	 * Send a direct message to a given user. You must be friends with the user.
 	 * @param string $message the text content of the direct message
 	 * @param string $userid the user for whom the direct message is
+	 * @return string XML with the direct message and sender info
 	 */
     public function sendDirectMessage ($message, $userid)
     {
@@ -186,7 +200,7 @@ class TwitterPHP
 	/**
 	 * Adds a user as a friend and starts following him.
 	 * @param string $userid the id (username) of the target user
-	 * @return object a simpleXML object with the target user basic information on success. False otherwise
+	 * @return string XML with the target user basic information
 	 */
 	public function addUser ($userid)
 	{
@@ -197,7 +211,7 @@ class TwitterPHP
 	/**
 	 * Unfriends the given user, also stops following it.
 	 * @param string $userid the id of the user to unfollow
-	 * @return object a simpleXML object with the target user basic information on sucess, False otherwise
+	 * @return XML with the target user basic information
 	 */
 	public function removeUser ($userid)
 	{
@@ -210,7 +224,7 @@ class TwitterPHP
      * Currently only returns 100 users maximum, problem will be solved
      * in future releases.
      * @param string $userid optional the username of the user to get following
-     * @return object a simpleXML with the users being followed by the auth user
+     * @return string XML with the users being followed by the auth user
      */
     public function getFollowing ($userid=null)
     {
@@ -227,7 +241,7 @@ class TwitterPHP
      * Currently only returns 100 users maximum, problem will be solved
      * in future releases.
      * @param string $userid optional the username of the user to get followers
-     * @return object a simpleXML object with the followers
+     * @return string XML with the followers
      */
     public function getFollowers ($userid=null)
     {
