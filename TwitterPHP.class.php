@@ -1,19 +1,16 @@
 <?php
-/**
- * TODOs:
- * - check for api errors and give some output
- * - Add OAuth support
- */
 
-/*************************************************************************
+/**
 *   TwitterPHP is a PHP library to interact with the Twitter API
 *
 *   @author Rogerio Vicente <http://rogeriopvl.com>
 *   @version 0.5
 *
 *	Changelog:
+*
 *	v0.5 - Some code optimizations, methods now return XML string instead
 *	       of a simpleXML object. Removed config.inc.php.
+*
 *	v0.2 - Added a check to see if cURL is loaded, and some http error
 * 	code detection on the connect() method.
 *
@@ -33,7 +30,7 @@
 *
 *   You should have received a copy of the GNU General Public License
 *   along with TwitterPHP.  If not, see <http://www.gnu.org/licenses/>.
-*************************************************************************/
+*/
 
 require_once ('defines.inc.php');
 
