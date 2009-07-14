@@ -74,8 +74,7 @@ class TwitterPHP
         
         //check if authentication is needed
         if ($auth == True) {
-			require_once ('config.inc.php'); // to get user login and pass	
-            curl_setopt($sess, CURLOPT_USERPWD, "$username:$password");
+            curl_setopt($sess, CURLOPT_USERPWD, $this->username.":".$this->password);
 		}
         
         //check if its POST, otherwise its GET
