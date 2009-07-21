@@ -3,7 +3,7 @@
 **************************************************
 
 Author: Rogerio Vicente <http://rogeriopvl.com>
-Version: 0.5	23-05-2009
+Version: 0.9	14-07-2009
 
 TwitterPHP is a complete Object-Oriented PHP library
 to the Twitter API. This is opensource software under

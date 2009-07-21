@@ -3,7 +3,7 @@
 	*   TwitterPHP is a PHP library to interact with the Twitter API
 	*
 	*   @author Rogerio Vicente <http://rogeriopvl.com>
-	*   @version 0.5
+	*   @version 0.9
 	*
 	*   ************************* LICENSE ************************************
 	*
@@ -22,25 +22,25 @@
 	*   You should have received a copy of the GNU General Public License
 	*   along with TwitterPHP.  If not, see <http://www.gnu.org/licenses/>.
 	*/
-	define ("VERSION", "v0.5");
-	define ("REFERER", "TwitterPHP ".VERSION);
+	define ("VERSION", "0.9");
+	define ("USER_AGENT", "TwitterPHP v".VERSION);
+	define ("APP_URL", "http://rogeriopvl.com/twitterphp");
         
     define ("GET", "get");
     define ("POST", "post");
 	
 	//URL's for some twitter api methods
-	define ("PUBLICTM", "http://twitter.com/statuses/public_timeline.xml?count=");
+	define ("API_LIMIT", "http://twitter.com/account/rate_limit_status");
+	define ("PUBLICTM", "http://twitter.com/statuses/public_timeline");
     define ("USERTM", "http://twitter.com/statuses/user_timeline/");
-    define ("FRIENDSTM", "http://twitter.com/statuses/friends_timeline.xml?count=");
+    define ("FRIENDSTM", "http://twitter.com/statuses/friends_timeline");
 	define ("FOLLOWERS", "http://twitter.com/statuses/followers");
-	define ("REPLIES", "http://twitter.com/statuses/replies.xml");
-	define ("DIRECTMSGS", "http://twitter.com/direct_messages.xml");
+	define ("REPLIES", "http://twitter.com/statuses/replies");
+	define ("DIRECTMSGS", "http://twitter.com/direct_messages");
 	define ("FRIENDS", "http://twitter.com/statuses/friends");
-	
-	//these ones bellow need to have the id.format appended
 	define ("LEAVE", "http://twitter.com/notifications/leave/");
 	define ("FOLLOW", "http://twitter.com/friendships/create/");
 	define ("UNFOLLOW", "http://twitter.com/friendships/destroy/");
-	define ("UPDATESTATUS", "http://twitter.com/statuses/update.xml?status=");
-	define ("SENDDIRECTMSG", "http://twitter.com/direct_messages/new.xml?user=");
+	define ("UPDATESTATUS", "http://twitter.com/statuses/update");
+	define ("SENDDIRECTMSG", "http://twitter.com/direct_messages/new");
 ?>

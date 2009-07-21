@@ -4,9 +4,11 @@
 *   TwitterPHP is a PHP library to interact with the Twitter API
 *
 *   @author Rogerio Vicente <http://rogeriopvl.com>
-*   @version 0.5
+*   @version 0.9
 *
 *	Changelog:
+*
+*	v0.9 - Corrected an error left accidently from the last version
 *
 *	v0.5 - Some code optimizations, methods now return XML string instead
 *	       of a simpleXML object. Removed config.inc.php.
@@ -38,12 +40,13 @@ class TwitterPHP
 {   
     private $username;
 	private $password;
+	private $format;
 	
 	/**
      * Constructor
      * @throws Exception if curl is not loaded
      */
-	function __construct ($username, $password)
+	function __construct ($username, $password, $format = 'xml')
     {
     	if (!extension_loaded ('curl'))
     	{
@@ -52,6 +55,11 @@ class TwitterPHP
 
 		$this->username = $username;
 		$this->password = $password;
+		
+		if ($format == "xml" || $format == "json")
+			$this->format = $format;
+		else
+			throw new Exception ('Error: specified data format is not supported by TwitterPHP. Choose xml or json.');
     }
     
     /**
@@ -65,12 +73,19 @@ class TwitterPHP
      */
     private function connect ($host, $conntype, $auth)
     {   
+		$headers = array (
+			'Expect:', 
+			'X-Twitter-Client: TwitterPHP',
+			'X-Twitter-Client-Version: '.VERSION,
+			'X-Twitter-Client-URL: '.APP_URL
+		);
+		
         $sess = curl_init();
         
         curl_setopt($sess, CURLOPT_URL, $host);
 		curl_setopt($sess, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($sess, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-		curl_setopt($sess, CURLOPT_REFERER, REFERER);
+		curl_setopt($sess, CURLOPT_USERAGENT, USER_AGENT);
         
         //check if authentication is needed
         if ($auth == True) {
@@ -78,12 +93,11 @@ class TwitterPHP
 		}
         
         //check if its POST, otherwise its GET
-        if ($conntype == 'post') {
+        if ($conntype === 'post') {
             curl_setopt($sess, CURLOPT_POST, 1);
-			curl_setopt($sess, CURLOPT_HTTPHEADER, array('Expect:')); //this is for a weird requirement
-																	  //by the twitter API
+			curl_setopt($sess, CURLOPT_HTTPHEADER, $headers);
 		}
-        
+
         $result = curl_exec($sess);
         $resHeaders = curl_getinfo($sess);
         
@@ -100,72 +114,72 @@ class TwitterPHP
     
     /**
      * Get the 20 most recent posts in public timeline. Twitter caches this for 60secs.
-     * @return string the public timeline in XML
+     * @return string the public timeline in specified data format
      */
     public function getPublicTimeLine ()
     {   
-        $host = PUBLICTM.$count;
+        $host = PUBLICTM.".".$this->format."?count=".$count;
         return $this->connect ($host, GET, False);
     }
     
     /**
      * Get the updates of a given user. Only works for non blocked updates.
      * @param string $userid the id of the target user
-     * @param integer $count the number of update to return. Maximum is 200.
-     * @return string XML containing the user updates
+     * @param int $count the number of update to return. Maximum is 200.
+     * @return string in specified data format containing the user updates
      */
     public function getUserUpdates ($userid, $count)
     {
         if ($count > 200)
             $count = 200;
         
-        $host = USERTM.$userid.".xml?count=".$count;
+        $host = USERTM.$userid.".".$this->format."?count=".$count;
         return $this->connect ($host, GET, False);
     }
     
     /**
      * Get the 20 most recent direct messages of authenticated user
-     * @return string XML containing 20 direct messages
+     * @return string in specified data format containing 20 direct messages
      */
     public function getDirectMsgs ()
     {
-        $host = DIRECTMSGS;
+        $host = DIRECTMSGS.".".$this->format;
         return $this->connect ($host, GET, True);
     }
     
     /**
      * Gets the timeline of the authenticated user
-	 * @param integer $count the number of posts to display
-     * @return string XML containing the posts from user and friends
+	 * @param int $count the number of posts to display
+     * @return string in specified data format containing the posts from user and friends
      */
     public function getOwnTimeline ($count)
     {
         if ($count > 200)
             $count = 200;
         
-        $host = FRIENDSTM.$count;
+        $host = FRIENDSTM.".".$this->format."?count=".$count;
         return $this->connect ($host, GET, True);
     }
     
     /**
      * Get the 20 most recent replies for authenticated user
-     * @param date $since optional select only replies after this date
-     * @return string XML containing 20 most recent replies
+     * @param string $since optional select only replies after this date
+     * @return string in specified data format containing 20 most recent replies
      */
-    public function getReplies ($since = false)
+    public function getReplies ($since = FALSE)
     {
-        $since ? $host = REPLIES."?since=".$since : $host = REPLIES;
+        $since !== FALSE ? $host = REPLIES.".".$this->format."?since=".$since : $host = REPLIES.".".$this->format;
         return $this->connect ($host, GET, True);
     }
     
 	/**
 	 * Posts a new status update to twitter.
 	 * @param string $message the message to post. Should not be more than 140 chars.
-	 * @return string XML with status element on success, false otherwise
+	 * @return string in specified data format with status element on success
 	 */
     public function sendUpdate ($message)
     {
-        $host = UPDATESTATUS.urlencode(stripslashes(urldecode($message)));
+        $host = UPDATESTATUS.".".$this->format."?status=".urlencode(stripslashes(urldecode($message)));
 		return $this->connect ($host, POST, True);
     }
     
@@ -173,7 +187,7 @@ class TwitterPHP
 	 * Posts a reply to a given userid.
 	 * @param string $message the text content of the reply
 	 * @param string $userid the user to whom the reply is
-	 * @return string XML with status element on success, false otherwise
+	 * @return string in specified data format with status element
 	 */
     public function sendReply ($message, $userid)
     {
@@ -185,33 +199,33 @@ class TwitterPHP
 	 * Send a direct message to a given user. You must be friends with the user.
 	 * @param string $message the text content of the direct message
 	 * @param string $userid the user for whom the direct message is
-	 * @return string XML with the direct message and sender info
+	 * @return string in specified data format with the direct message and sender info
 	 */
     public function sendDirectMessage ($message, $userid)
     {
-        $host = SENDDIRECTMSG.$userid."&text=".urlencode(stripslashes(urldecode($message)));
+        $host = SENDDIRECTMSG.".".$this->format."?user=".$userid."&text=".urlencode(stripslashes(urldecode($message)));
 		return $this->connect ($host, POST, True);
     }
 
 	/**
 	 * Adds a user as a friend and starts following him.
 	 * @param string $userid the id (username) of the target user
-	 * @return string XML with the target user basic information
+	 * @return string in specified data format with the target user basic information
 	 */
 	public function addUser ($userid)
 	{
-		$host = FOLLOW.$userid.".xml?follow=true";
+		$host = FOLLOW.$userid.".".$this->format."?follow=true";
 		return $this->connect ($host, POST, True);
 	}
 	
 	/**
 	 * Unfriends the given user, also stops following it.
 	 * @param string $userid the id of the user to unfollow
-	 * @return XML with the target user basic information
+	 * @return string in specified data format with the target user basic information
 	 */
 	public function removeUser ($userid)
 	{
-		$host = UNFOLLOW.$userid.".xml";
+		$host = UNFOLLOW.$userid.".".$this->format;
 		return $this->connect ($host, POST, True);
 	}
 	
@@ -220,14 +234,14 @@ class TwitterPHP
      * Currently only returns 100 users maximum, problem will be solved
      * in future releases.
      * @param string $userid optional the username of the user to get following
-     * @return string XML with the users being followed by the auth user
+     * @return string in specified data format with the users being followed by the auth user
      */
-    public function getFollowing ($userid=null)
+    public function getFollowing ($userid = NULL)
     {
-        if ($userid == null)
-        	$host = FRIENDS.".xml";
+        if ($userid === NULL)
+        	$host = FRIENDS.".".$this->format;
         else
-        	$host = FRIENDS."/".$userid.".xml";
+        	$host = FRIENDS."/".$userid.".".$this->format;
         
         return $this->connect ($host, GET, True);
     }
@@ -237,16 +251,27 @@ class TwitterPHP
      * Currently only returns 100 users maximum, problem will be solved
      * in future releases.
      * @param string $userid optional the username of the user to get followers
-     * @return string XML with the followers
+     * @return string in specified data format with the followers
      */
-    public function getFollowers ($userid=null)
+    public function getFollowers ($userid = NULL)
     {
-        if ($userid == null)
-        	$host = FOLLOWERS.".xml";
+        if ($userid === NULL)
+        	$host = FOLLOWERS.".".$this->format;
         else
-        	$host = FOLLOWERS."/".$userid.".xml";
+        	$host = FOLLOWERS."/".$userid.".".$this->format;
         	
         return $this->connect ($host, GET, True);
     }
+
+	/**
+	 * Gets
+	 */
+	public function getAPILimit ($byuser)
+	{
+		$host = API_LIMIT.".".$this->format;
+		
+		return $byuser === TRUE ? $this->connect ($host, GET, True) : $this->connect ($host, GET, False);
+			
+	}
 }
 ?>
