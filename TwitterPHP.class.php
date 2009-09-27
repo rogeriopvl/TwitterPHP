@@ -264,7 +264,7 @@ class TwitterPHP
     }
 
 	/**
-	 * Gets
+	 * Gets the used limit of the API
 	 */
 	public function getAPILimit ($byuser)
 	{
@@ -272,6 +272,17 @@ class TwitterPHP
 		
 		return $byuser === TRUE ? $this->connect ($host, GET, True) : $this->connect ($host, GET, False);
 			
+	}
+	
+	/**
+	 * Returns all tweets that contain given keyword
+	 * This uses the alpha twitter stream API
+	 * @param string $keyword the keyword to track
+	 * @return a stream
+	 */
+	public function trackKeyword ($keyword)
+	{
+		// to implement
 	}
 }
 ?>
