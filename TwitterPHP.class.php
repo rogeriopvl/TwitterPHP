@@ -116,7 +116,7 @@ class TwitterPHP
      * Get the 20 most recent posts in public timeline. Twitter caches this for 60secs.
      * @return string the public timeline in specified data format
      */
-    public function getPublicTimeLine ()
+    public function getPublicTimeLine ($count=20)
     {   
         $host = PUBLICTM.".".$this->format."?count=".$count;
         return $this->connect ($host, GET, False);
