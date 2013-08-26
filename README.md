@@ -1,10 +1,12 @@
-# TwitterPHP
+# *Warning:* This library is deprecated and no longer maintained
+
+## TwitterPHP
 
 ## Info
 
 TwitterPHP is a Object-Oriented PHP library to the Twitter API.
 
-Twitter will stop supporting HTTP Basic Authentication, when this happens (somewhere around June 2010) TwitterPHP will no longer work. I'm working on a version to support OAuth. Make sure to checkout the `oauth` branch.
+Twitter will stop supporting HTTP Basic Authentication, when this happens (somewhere around June 2010) TwitterPHP will no longer work.
 
 ## How to use
 
